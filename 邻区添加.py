@@ -17,11 +17,9 @@ def get_week_range(start_date, date):
     week_end = week_start + timedelta(days=6)
     return week_start, week_end
 
-def process_files():
-    root = tk.Tk()
-    root.withdraw()  # 隐藏主窗口
-
-    file_paths = filedialog.askopenfilenames(title="选择多个CSV文件", filetypes=[("CSV files", "*.csv")])
+def process_files(root):
+    """ 处理文件并生成汇总结果 """
+    file_paths = filedialog.askopenfilenames(title="选择多个CSV文件", filetypes=[("CSV files", "*.csv")], parent=root)
     if not file_paths:
         print("未选择任何文件！")
         return
@@ -29,7 +27,7 @@ def process_files():
     start_date = datetime(2024, 4, 1)
     aggregated_data = {}
 
-    filter_condition = simpledialog.askstring("筛选条件", "请输入地市筛选条件（多个地市用逗号分隔，如'杭州,温州,宁波'）：")
+    filter_condition = simpledialog.askstring("筛选条件", "请输入地市筛选条件（多个地市用逗号分隔，如'杭州,温州,宁波'）：", parent=root)
     if not filter_condition:
         print("未输入筛选条件，将处理所有地市的数据。")
         filter_cities = []  # 不设置筛选条件，相当于筛选所有地市
@@ -44,7 +42,7 @@ def process_files():
         try:
             # 指定 '创建时间' 列为日期格式，其他列作为字符串读取
             dtype = {col: 'str' for col in range(1, 100)}  # 假设最多100列，如果有更多列，可以调整
-            df = pd.read_csv(file_path, encoding='gbk',usecols=range(15), dtype=dtype, parse_dates=['创建时间'],
+            df = pd.read_csv(file_path, encoding='gbk', usecols=range(15), dtype=dtype, parse_dates=['创建时间'],
                              date_format='%Y-%m-%d %H:%M:%S')
         except Exception as e:
             print(f"读取文件 {file_path} 时出错: {e}")
@@ -62,7 +60,6 @@ def process_files():
         # 过滤出有效数据
         df = df.dropna(subset=['创建时间'])
         df = df[df['创建时间'] >= start_date]
-
 
         # 根据地市进行筛选
         if filter_cities:
@@ -102,21 +99,27 @@ def process_files():
 
             # 写入文件，如果已存在则追加
             if os.path.exists(output_path):
-                week_df.to_csv(output_path, mode='a', index=False, header=False, encoding='utf-8')
+                week_df.to_csv(output_path, mode='a', index=False, header=False, encoding='gbk')
             else:
-                week_df.to_csv(output_path, index=False, encoding='utf-8')
+                week_df.to_csv(output_path, index=False, encoding='gbk')
 
             print(f"保存文件: {output_path}")
     else:
         print("没有找到符合条件的数据，未生成文件。")
 
-# if __name__ == "__main__":
-#     process_files()
 def main():
     """
     统一入口，调用 process_files()，用于外部调用
     """
-    process_files()
+    # 创建并隐藏根窗口
+    root = tk.Tk()
+    root.withdraw()  # 隐藏根窗口
+
+    # 调用文件处理
+    process_files(root)
+
+    # 销毁根窗口
+    root.destroy()
 
 if __name__ == "__main__":
     main()
