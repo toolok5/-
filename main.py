@@ -11,14 +11,18 @@ import tkinter
 import 地市筛选
 import 表格行数统计
 import 规划数据处理
-import csv匹配处理
+import LTE匹配处理
+import NR匹配处理
 import excel文件生成
 import 邻区参数
 import 邻区添加
 import 普通参数
 import 总流量添加
 import 删减行数
-
+import MR性能数据采集
+import 文件名中字段批量修改
+import 复制自定义列数另存
+import A数据剪切到B数据
 
 # 本地文件路径
 file_path = "deadline.txt"  # 使用txt后缀
@@ -128,34 +132,33 @@ def run_task(module):
     except Exception as e:
         messagebox.showerror("运行错误", f"运行模块时出错：{e}")
 
-
 def update_progress(value):
     """更新进度条"""
     progress_bar["value"] = value
     window.update_idletasks()
 
-
 def run_in_thread(func):
     """在单独线程中运行函数"""
-    threading.Thread(target=func).start()
-
+    threading.Thread(target=func, daemon=True).start()
 
 def show_instructions(number):
     """显示使用说明"""
     instructions = {
-        1: "MR数据处理步骤说明：\n---------------------------------注意事项------------------------------\n"
+        1: "MR性能数据处理步骤说明：\n---------------------------------注意事项------------------------------\n"
             "1. 首选将MR和性能原始数据分别放在2个文件夹里面。\n"
             "2. 把“去后缀名.bat”也放在文件夹目录下双击运行后自动去除后缀名，然后将文件全部解压。\n"
-            "3. 运行“csv匹配处理”程序弹出选择框分别选择需要操作的MR文件和性能文件（MR文件和性能文件日期和个数互相对应）。\n"
-            "4. 匹配结束后可以查看结果保存在“C:\excel”文件夹里。\n"
-            "5. 如果需要可以对csv文件进行选择删除你需要删除的行数。\n"
-            "6. 运行“xlsx文件生成”程序自动对“C:\excel”文件夹里的csv文件进行处理（100M一个文件大概需要2分钟处理）。\n"
-            "7. 程序运行可能会有未知的bug，如有问题欢迎指正探讨，微信手机号：15057337780，感谢您的理解和支持",
+            "3. 运行’LTE匹配处理’、‘NR匹配处理’程序填写行数（每个文件大概需要读取多少行来凑够你需要的总行数），弹出选择框分别选择需要操作的MR文件和性能文件（MR文件和性能文件日期和个数互相对应）。\n"
+            "4. 匹配结束后可以查看结果保存在“C:\\excel”文件夹里。\n"
+            "5. 如果需要可以对csv文件进行选择并删除你需要删除的行数。\n"
+            "6. 运行“xlsx文件生成”选择sheet1和sheet2工作表对应保存的列数程序自动对“C:\\excel”文件夹里的csv文件进行处理转换成xlsx文件（最好只放要处理的文件）。\n"
+            "7. 运行“MR性能数据采集”程序对选择的csv文件根据日期归纳到周期里面按照周名进行合并保存（生成文件后第一周和最后一周的日期可能需要手动更改到实际需要的日期）。\n"
+            "8. 运行“A数据剪切到B数据”程序将A文件里的N行剪切到B文件中（默认检查A文件中是否有‘工单编号’列并修改工单编号里的日期以对应到B文件名中的日期，还能手动输入列名‘创建时间,生产时间’将这些列中的日期也一并修改如果需要的话，B文件名中要包含周日期比如：2024-04-29_2024-05-05）。\n"
+            "9. 程序运行可能会有未知的bug，如有问题欢迎指正探讨，微信手机号：15057337780，感谢您的理解和支持",
         2: "规划数据处理步骤说明：\n---------------------------------注意事项------------------------------\n"
             "1. 首先源文件需要各位自己整理每个月要多少条数据和对应的文件，按照月度来处理，比如4月16号到4月28号算在4月份，那就处理对应的文件，日期就填写’2024/04/16-2024/04/28’。\n"
             "2. 如果源文件是按照地市去下载的那就不需要筛选地市了。\n"
             "3. 筛选地市时要注意地市之间的逗号，比如‘温州,丽水’里面的逗号一定要英文的‘,’。\n"
-            "4. 固定全部输出文件结果都在‘C:\excel’。\n"
+            "4. 固定全部输出文件结果都在‘C:\\excel’。\n"
             "5. 程序运行时，请耐心等待，直到进度条提示完成。\n"
             "6. 程序可能存在一些未知bug，如有问题欢迎指正探讨，微信手机：15057337780，感谢您的支持和理解！。\n",
         3: "参数数据处理步骤说明：\n--------------------------------注意事项------------------------------\n"
@@ -163,11 +166,10 @@ def show_instructions(number):
             "2. ‘邻区添加’一定要先全部选择4到4的csv文件运行完后，再次运行程序选其他文件（表头有bug）。\n"
             "3. 筛选地市时要注意地市之间的逗号，比如‘温州,丽水’里面的逗号一定要英文的‘,’。\n"
             "4. 删减行数根据自己需求选择那些要减的源文件和填写每个文件要减多少行。\n"
-            "5. 固定全部输出文件结果都在‘C:\excel’。\n"
+            "5. 固定全部输出文件结果都在‘C:\\excel’。\n"
             "6. 程序可能存在一些未知bug，如有问题欢迎指正探讨，微信手机：15057337780，感谢您的支持和理解！\n",
     }
     messagebox.showinfo(f"使用说明{number}", instructions.get(number, "无相关说明"))
-
 
 # 创建主窗口
 window = tk.Tk()
@@ -200,9 +202,12 @@ column_buttons = [
     # 第一列
     [
         ("MR数据说明", lambda: show_instructions(1),{"bg": "#ADD8E6", "activebackground": "#ffff99"}),
-        ("csv匹配处理", lambda: run_in_thread(lambda: run_task(csv匹配处理))),
+        ("LTE匹配处理", lambda: run_in_thread(lambda: run_task(LTE匹配处理))),
+        ("NR匹配处理", lambda: run_in_thread(lambda: run_task(NR匹配处理))),
         ("删减行数", lambda: run_in_thread(lambda: run_task(删减行数))),
         ("excel文件生成", lambda: run_in_thread(lambda: run_task(excel文件生成))),
+        ("MR性能数据采集", lambda: run_in_thread(lambda: run_task(MR性能数据采集))),
+        ("A数据剪切到B数据", lambda: run_in_thread(lambda: run_task(A数据剪切到B数据))),
     ],
     # 第二列
     [
@@ -211,6 +216,8 @@ column_buttons = [
         ("表格行数统计", lambda: run_in_thread(lambda: run_task(表格行数统计))),
         ("删减行数", lambda: run_in_thread(lambda: run_task(删减行数))),
         ("规划数据处理", lambda: run_in_thread(lambda: run_task(规划数据处理))),
+        ("复制自定义列数另存", lambda: run_in_thread(lambda: run_task(复制自定义列数另存))),
+        ("文件名中字段批量修改", lambda: run_in_thread(lambda: run_task(文件名中字段批量修改))),
     ],
     # 第三列
     [
@@ -232,7 +239,6 @@ frame.pack(pady=10)
 max_rows = max(len(col) for col in column_buttons)
 
 # 创建网格布局
-# 创建网格布局
 for col_idx, button_list in enumerate(column_buttons):
     for row_idx in range(max_rows):
         if row_idx < len(button_list):
@@ -247,7 +253,6 @@ for col_idx, button_list in enumerate(column_buttons):
             # 添加空白标签占位以对齐列
             placeholder = tk.Label(frame, text="", bg="#f4f4f4", width=18, height=2)
             placeholder.grid(row=row_idx, column=col_idx, padx=10, pady=5)
-
 
 # 运行主窗口
 window.mainloop()
